@@ -1,12 +1,12 @@
 // this header implements the shader handling.
 
-#include <GL/glew.h> 
-#include <GL/glut.h>
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
 #include <math.h>
 
+#include <GL/glew.h> 
+#include <GL/glut.h>
 
 using namespace std;
 
