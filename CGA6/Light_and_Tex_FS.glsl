@@ -48,5 +48,6 @@ void main() {
     // ambient
     ambient = Color * 0.2;
 
-        gl_FragColor = ambient + diff + spec;
+    //gl_FragColor = ambient + diff + spec;
+    gl_FragColor = texture2D(Texture, gl_TexCoord[0].st);
 }

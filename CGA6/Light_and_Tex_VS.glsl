@@ -19,6 +19,7 @@ void main() {
 	// reuse your phong vs code
 	// interpolate tex coordinates over the surface using the provided varying
 
+    gl_TexCoord[0] = gl_MultiTexCoord0;
     N = normalize(NormalMatrix * gl_Normal);
 	V = MV * gl_Vertex;
 

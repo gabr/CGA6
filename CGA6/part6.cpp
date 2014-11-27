@@ -33,7 +33,12 @@ float spaceLength = 140;
 
 float t = 0;  // the time parameter (incremented in the idle-function)
 float speed = 0.1;  // rotation speed of the light source in degree/frame
+
+// textures
 GLuint earthTex, moonTex, saturnTex, backgroundTex; // use for the according textures
+
+// background
+const string background_filePath = "../data/background.jpg";
 
 const double planetSlices = 64;
 const double planetStacks = 64;
@@ -66,12 +71,6 @@ const double distanceBetweenRings = 0.4;
 const double numberOfRings = 10;
 const double numberOfCircleSegments = 60;
 glm::vec4 ringsColor(0.8, 0.6, 0.5, 0.0);
-
-// textures
-
-// background
-const int background_name = 0;
-const string background_filePath = "../data/background.jpg";
 
 //We need to keep track of matrices ourselves
 /**
@@ -120,8 +119,8 @@ struct ShaderUniforms
         glUniform4fv(location_LightSourceViewSpace, 1, glm::value_ptr(LightSource));
         glUniform4fv(location_Color, 1, glm::value_ptr(Color));
         glUniform1f(location_Time, 10 * t);
-        //TODO: Bind texture TexID
 
+        glBindTexture(GL_TEXTURE_2D, TexdID);
     }
 
 };
@@ -135,7 +134,6 @@ ShaderUniforms SunShader, TexturePhongShader;
 
 void initTexture(GLint texture_name, GLint w, GLint h, GLubyte *data)
 {
-
     glBindTexture(GL_TEXTURE_2D, texture_name);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -164,9 +162,9 @@ void initGL()
     createProgram_VF("Light_and_Tex_VS.glsl", "Light_and_Tex_FS.glsl", &TexturePhongShader.Shader);
 
     /// TODO Texture generation: &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    QImage background_img(background_filePath.c_str());
-    QImage background = QGLWidget::convertToGLFormat(background_img);
-    initTexture(background_name, background.width(), background.height(), background.bits());
+    QImage background = QGLWidget::convertToGLFormat(QImage(background_filePath.c_str()));
+    glGenTextures(1, &backgroundTex);
+    initTexture(backgroundTex, background.width(), background.height(), background.bits());
 
     /// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 }
@@ -236,40 +234,40 @@ void drawQuad(float a)
 
     // -Z
     glBegin(GL_QUADS);
-    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
-    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
-    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
-    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
 
     // +Z
-    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
-    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
-    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
-    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
 
     // +X
-    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
-    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
-    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
-    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
 
     // -X
-    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
-    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
-    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
-    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
 
     // +Y
-    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
-    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
-    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
-    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
 
     // -Y
-    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
-    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
-    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
-    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
 
     glEnd();
 }
@@ -332,23 +330,23 @@ void display()
     //TODO: Draw geometry for background
     glm::vec3 spaceCenter = glm::vec3(cam.position + glm::normalize(cam.viewDir) * spaceLength);
     M = glm::translate(spaceCenter);
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), 0, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), backgroundTex, t);
     drawQuad(spaceLength);
 
     //draw a blue earth
     M = glm::rotate(earthDegree * t, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(50.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, earthColor, 0, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, earthColor, earthTex, t);
     drawSphere(earthRadius, planetSlices, planetStacks);
 
     // draw the grey earth's moon
     // remember that the transformation of the earth also affects the moon
     M = M * glm::rotate(moonDegree * t, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::translate(glm::vec3(20.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, moonColor, 0, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, moonColor, moonTex, t);
     drawSphere(moonRadius, moonSlices, moonStacks);
 
     //draw saturn with its rings
     M = glm::rotate(saturnDegree * t, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(100.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, saturnColor, 0, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, saturnColor, saturnTex, t);
     drawSphere(saturnRadius, planetSlices, planetStacks);
     // rings
     M = M * glm::rotate(120.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -364,7 +362,6 @@ void display()
 
 void cleanUp()
 {
-
     glDeleteTextures(1, &earthTex);
     glDeleteTextures(1, &moonTex);
     glDeleteTextures(1, &saturnTex);
@@ -372,7 +369,6 @@ void cleanUp()
 
     glDeleteProgram(SunShader.Shader);
     glDeleteProgram(TexturePhongShader.Shader);
-
 }
 
 /// the mouse handling is done in the next two functions (you additionally need some global variables):
