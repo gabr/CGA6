@@ -18,15 +18,18 @@ const double PI = 3.14159265359;
 // some global variables:
 bool wireframe_mode = false;
 
-/**
-* @brief cameraSystem:
-*  global camera variable
-* use and edit
-*/
+// window size
+int window_widht = 1024;
+int window_height = 1024;
+
+// global camera variable
 cameraSystem cam;
 const float forwardDelta = 2;
 const float angleDelta = 2.0f;
 glm::vec2 mouseStartPosition;
+
+// space
+float spaceLength = 140;
 
 float t = 0;  // the time parameter (incremented in the idle-function)
 float speed = 0.1;  // rotation speed of the light source in degree/frame
@@ -210,46 +213,47 @@ void drawSphere(float r, int slices, int stacks)
 // This function draws a textured quad arround the scene.
 // TODO
 
-void DrawQuad(float a)
+void drawQuad(float a)
 {
     //TODO: Provide Texture Coordinates
 
     // -Z
     glBegin(GL_QUADS);
-    glVertex3f(a, a, -a);
-    glVertex3f(-a, a, -a);
-    glVertex3f(-a, -a, -a);
-    glVertex3f(a, -a, -a);
+    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
+    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
 
     // +Z
-    glVertex3f(a, a, a);
-    glVertex3f(a, -a, a);
-    glVertex3f(-a, -a, a);
-    glVertex3f(-a, a, a);
+    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
+    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
 
     // +X
-    glVertex3f(a, a, -a);
-    glVertex3f(a, -a, -a);
-    glVertex3f(a, -a, a);
-    glVertex3f(a, a, a);
+    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
 
     // -X
-    glVertex3f(-a, a, -a);
-    glVertex3f(-a, a, a);
-    glVertex3f(-a, -a, a);
-    glVertex3f(-a, -a, -a);
+    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
+    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
 
     // +Y
-    glVertex3f(-a, a, -a);
-    glVertex3f(a, a, -a);
-    glVertex3f(a, a, a);
-    glVertex3f(-a, a, a);
+    glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
+    glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
+    glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
 
-    // +Y
-    glVertex3f(-a, -a, -a);
-    glVertex3f(-a, -a, a);
-    glVertex3f(a, -a, a);
-    glVertex3f(a, -a, -a);
+    // -Y
+    glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
+    glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+
     glEnd();
 }
 
@@ -285,6 +289,9 @@ void initTexture(GLint texture_name, GLint w, GLint h, GLubyte *data)
 
 void reshape(int w, int h)
 {
+    window_widht = w;
+    window_height = h;
+
     glViewport(0, 0, (GLsizei)w, (GLsizei)h);
     P = glm::perspective(70.0f, (GLfloat)w / (GLfloat)h, 10.0f, 400.0f);
 }
@@ -320,6 +327,10 @@ void display()
     //TODO: Set Texture for each body
 
     //TODO: Draw geometry for background
+    glm::vec3 spaceCenter = glm::vec3(cam.position + glm::normalize(cam.viewDir) * spaceLength);
+    M = glm::translate(spaceCenter);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), 0, t);
+    drawQuad(spaceLength);
 
     //draw a blue earth
     M = glm::rotate(earthDegree * t, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(50.0f, 0.0f, 0.0f));
@@ -355,7 +366,6 @@ void cleanUp()
     glDeleteTextures(1, &moonTex);
     glDeleteTextures(1, &saturnTex);
     glDeleteTextures(1, &backgroundTex);
-
 
     glDeleteProgram(SunShader.Shader);
     glDeleteProgram(TexturePhongShader.Shader);
@@ -430,7 +440,7 @@ void keyboard(unsigned char key, int x, int y)
 int main(int argc, char **argv)
 {
     glutInit(&argc, argv);
-    glutInitWindowSize(1042, 1024);
+    glutInitWindowSize(window_widht, window_height);
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
 
     glutCreateWindow("Planet System");
@@ -449,10 +459,6 @@ int main(int argc, char **argv)
 
     glutReshapeFunc(reshape);
     glutIdleFunc(onIdle);
-
-    //TODO: you may need these 
-    // glutMotionFunc(onMouseMove);
-    // glutMouseFunc(onMouseDown);
 
     initGL();
 
