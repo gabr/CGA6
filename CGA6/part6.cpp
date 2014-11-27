@@ -67,9 +67,13 @@ const double numberOfRings = 10;
 const double numberOfCircleSegments = 60;
 glm::vec4 ringsColor(0.8, 0.6, 0.5, 0.0);
 
+// textures
+
+// background
+const int background_name = 0;
+const string background_filePath = "../data/background.jpg";
 
 //We need to keep track of matrices ourselves
-
 /**
 * @brief P,V,M:
 * your matrices for setting the scene, no matrix stack anymore
@@ -127,6 +131,18 @@ struct ShaderUniforms
 */
 ShaderUniforms SunShader, TexturePhongShader;
 
+/// Generating and initializing an openGL texture:
+
+void initTexture(GLint texture_name, GLint w, GLint h, GLubyte *data)
+{
+
+    glBindTexture(GL_TEXTURE_2D, texture_name);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+}
 
 void initGL()
 {
@@ -148,8 +164,9 @@ void initGL()
     createProgram_VF("Light_and_Tex_VS.glsl", "Light_and_Tex_FS.glsl", &TexturePhongShader.Shader);
 
     /// TODO Texture generation: &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-
-
+    QImage background_img(background_filePath.c_str());
+    QImage background = QGLWidget::convertToGLFormat(background_img);
+    initTexture(background_name, background.width(), background.height(), background.bits());
 
     /// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 }
@@ -272,20 +289,6 @@ void drawCircle(float r, int num_segments)
     }
     glEnd();
 }
-
-/// Generating and initializing an openGL texture:
-
-void initTexture(GLint texture_name, GLint w, GLint h, GLubyte *data)
-{
-
-    glBindTexture(GL_TEXTURE_2D, texture_name);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-}
-
 
 void reshape(int w, int h)
 {
