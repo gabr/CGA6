@@ -23,31 +23,21 @@ void main() {
     vec3 E = normalize(V.xyz);
     vec3 R = reflect(L, N);
 
-    // phong
-    int s = 3;
-    vec4 diff, spec, ambient;
-    float dotPr = 0.0;
-    
-    // diff
-    dotPr = dot(N, L);
-    if (dotPr < 0.0)
-    {
-        dotPr = 0.0;
-    }
-    diff = Color * dotPr;
-
     // spec
-    dotPr = dot(E, R);
+    float s = 3;
+    float dotPr = dot(E, R);
     if (dotPr < 0.0)
     {
         dotPr = 0.0;
     }
 
-    spec = vec4(1.0) * pow(dotPr, s);
+    vec4 spec = vec4(1.0) * pow(dotPr, s);
+    vec4 texColor = texture2D(Texture, gl_TexCoord[0].st);
 
-    // ambient
-    ambient = Color * 0.2;
+    if (texColor.z >= 0.3 && texColor.x <= 0.5 && texColor.y <= 0.5)
+    {
+        texColor += 0.5 * spec;
+    }
 
-    //gl_FragColor = ambient + diff + spec;
-    gl_FragColor = texture2D(Texture, gl_TexCoord[0].st);
+    gl_FragColor =  texColor;
 }
