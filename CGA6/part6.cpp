@@ -29,7 +29,7 @@ const float angleDelta = 2.0f;
 glm::vec2 mouseStartPosition;
 
 // space
-float spaceLength = 140;
+float spaceLength = 400;
 
 float t = 0;  // the time parameter (incremented in the idle-function)
 float speed = 0.1;  // rotation speed of the light source in degree/frame
@@ -37,11 +37,14 @@ float speed = 0.1;  // rotation speed of the light source in degree/frame
 // textures
 GLuint earthTex, moonTex, saturnTex, backgroundTex; // use for the according textures
 
-// background
-const string background_filePath = "../data/background.jpg";
+// file paths
+const string background_filePath = "./data/background.jpg";
+const string earth_filePath = "./data/earth.jpg";
+const string moon_filePath = "./data/moon.jpg";
+const string saturn_filePath = "./data/saturn.jpg";
 
-const double planetSlices = 64;
-const double planetStacks = 64;
+const double planetSlices = 128;
+const double planetStacks = 128;
 
 // sun
 const double sunRadius = 25;
@@ -162,10 +165,25 @@ void initGL()
     createProgram_VF("Light_and_Tex_VS.glsl", "Light_and_Tex_FS.glsl", &TexturePhongShader.Shader);
 
     /// TODO Texture generation: &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    QImage background = QGLWidget::convertToGLFormat(QImage(background_filePath.c_str()));
     glGenTextures(1, &backgroundTex);
+    QImage background = QGLWidget::convertToGLFormat(QImage(background_filePath.c_str()));
     initTexture(backgroundTex, background.width(), background.height(), background.bits());
 
+    glGenTextures(1, &earthTex);
+    QImage img(earth_filePath.c_str());
+    QTransform transform;
+    transform.rotate(180);
+    img = img.transformed(transform);
+    QImage earth = QGLWidget::convertToGLFormat(img);
+    initTexture(earthTex, earth.width(), earth.height(), earth.bits());
+
+    glGenTextures(1, &moonTex);
+    QImage moon = QGLWidget::convertToGLFormat(QImage(moon_filePath.c_str()));
+    initTexture(moonTex, moon.width(), moon.height(), moon.bits());
+
+    glGenTextures(1, &saturnTex);
+    QImage saturn = QGLWidget::convertToGLFormat(QImage(saturn_filePath.c_str()));
+    initTexture(saturnTex, saturn.width(), saturn.height(), saturn.bits());
     /// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 }
 
@@ -181,14 +199,25 @@ void drawSphere(float r, int slices, int stacks)
     float dTheta = 2.0*PI / (float)stacks;
     float dPhi = PI / (float)slices;
 
+    float x, y, z;
+
     //The Northpole:
     glBegin(GL_TRIANGLE_FAN);
+
+    glTexCoord2d(0.5f, 1.0f);
     glNormal3f(0, 1, 0);
     glVertex3f(0, r, 0);
+
     for (int i = stacks; i >= 0; i--)
     {
-        glNormal3f(sin(dPhi)*cos(i*dTheta), cos(dPhi), sin(dPhi)*sin(i*dTheta));
-        glVertex3f(r*sin(dPhi)*cos(i*dTheta), r*cos(dPhi), r*sin(dPhi)*sin(i*dTheta));
+        x = sin(dPhi)*cos(i*dTheta);
+        y = cos(dPhi);
+        z = sin(dPhi)*sin(i*dTheta);
+
+        glTexCoord2d(((float)i)/stacks, 1.0f - 1.0f/slices);
+
+        glNormal3f(x, y, z);
+        glVertex3f(r*x, r*y, r*z);
     }
     glEnd();
 
@@ -199,27 +228,41 @@ void drawSphere(float r, int slices, int stacks)
         glBegin(GL_QUAD_STRIP);
         for (int i = stacks; i >= 0; i--)
         {
+            x = sin(j*dPhi)*cos(i*dTheta);
+            y = cos(j*dPhi);
+            z = sin(j*dPhi)*sin(i*dTheta);
 
-            glNormal3f(sin(j*dPhi)*cos(i*dTheta), cos(j*dPhi), sin(j*dPhi)*sin(i*dTheta));
-            glVertex3f(r*sin(j*dPhi)*cos(i*dTheta), r*cos(j*dPhi), r*sin(j*dPhi)*sin(i*dTheta));
+            glTexCoord2d(((float)i) / stacks, ((float)j) / slices);
+            glNormal3f(x, y, z);
+            glVertex3f(r*x, r*y, r*z);
 
-            glNormal3f(sin((j + 1)*dPhi)*cos(i*dTheta), cos((j + 1)*dPhi), sin((j + 1)*dPhi)*sin(i*dTheta));
-            glVertex3f(r*sin((j + 1)*dPhi)*cos(i*dTheta), r*cos((j + 1)*dPhi), r*sin((j + 1)*dPhi)*sin(i*dTheta));
+            x = sin((j + 1)*dPhi)*cos(i*dTheta);
+            y = cos((j + 1)*dPhi);
+            z = sin((j + 1)*dPhi)*sin(i*dTheta);
+
+            glTexCoord2d(((float)i)/ stacks, ((float)(j + 1.0f)) / slices);
+            glNormal3f(x, y, z);
+            glVertex3f(r*x, r*y, r*z);
         }
         glEnd();
     }
     // South Pole:
     glBegin(GL_TRIANGLE_FAN);
 
-    //glTexCoord2f(..,..); 
-
+    glTexCoord2d(0.5f, 0.0f);
     glNormal3f(0, -1, 0);
     glVertex3f(0, -r, 0);
+
     for (int i = 0; i <= stacks; i++)
     {
-        //glTexCoord2f(..,..); 
-        glNormal3f(sin((slices - 1)*dPhi)*cos(i*dTheta), cos((slices - 1)*dPhi), sin((slices - 1)*dPhi)*sin(i*dTheta));
-        glVertex3f(r*sin((slices - 1)*dPhi)*cos(i*dTheta), r*cos((slices - 1)*dPhi), r*sin((slices - 1)*dPhi)*sin(i*dTheta));
+        x = sin((slices - 1)*dPhi)*cos(i*dTheta);
+        y = cos((slices - 1)*dPhi);
+        z = sin((slices - 1)*dPhi)*sin(i*dTheta);
+
+        glTexCoord2d(((float)i) / stacks, 1.0f / slices);
+
+        glNormal3f(x, y, z);
+        glVertex3f(r*x, r*y, r*z);
     }
     glEnd();
 
@@ -235,15 +278,15 @@ void drawQuad(float a)
     // -Z
     glBegin(GL_QUADS);
     glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(-a, a, -a);  glNormal3f(a, -a, a);
     glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, -a); glNormal3f(a, a, a);
-    glTexCoord2f(1.0f, 0.0f); glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(a, -a, -a);  glNormal3f(-a, a, a);
 
     // +Z
     glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, a);    glNormal3f(-a, -a, -a);
-    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
-    glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
     glTexCoord2f(1.0f, 0.0f); glVertex3f(a, -a, a);   glNormal3f(-a, a, -a);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(-a, -a, a);  glNormal3f(a, a, -a);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(-a, a, a);   glNormal3f(a, -a, -a);
 
     // +X
     glTexCoord2f(1.0f, 1.0f); glVertex3f(a, a, -a);   glNormal3f(-a, -a, a);
@@ -294,7 +337,7 @@ void reshape(int w, int h)
     window_height = h;
 
     glViewport(0, 0, (GLsizei)w, (GLsizei)h);
-    P = glm::perspective(70.0f, (GLfloat)w / (GLfloat)h, 10.0f, 400.0f);
+    P = glm::perspective(70.0f, (GLfloat)w / (GLfloat)h, 10.0f, 1500.0f);
 }
 
 void onIdle()
@@ -330,6 +373,7 @@ void display()
     //TODO: Draw geometry for background
     glm::vec3 spaceCenter = glm::vec3(cam.position + glm::normalize(cam.viewDir) * spaceLength);
     M = glm::translate(spaceCenter);
+    M = glm::mat4(1.0f);
     TexturePhongShader.bindUniforms(M, V, P, lightSource, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), backgroundTex, t);
     drawQuad(spaceLength);
 
