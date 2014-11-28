@@ -23,21 +23,44 @@ void main() {
     vec3 E = normalize(V.xyz);
     vec3 R = reflect(L, N);
 
+    // ambient from texture
+    vec4 ambient = texture2D(Texture, gl_TexCoord[0].st);
+
+    // diff
+    float dotPr = dot(N, L);
+    if (dotPr < 0.0)
+    {
+        dotPr = 0.0;
+    }
+    vec4 diff = ambient * dotPr;
+
     // spec
     float s = 3;
-    float dotPr = dot(E, R);
+    dotPr = dot(E, R);
     if (dotPr < 0.0)
     {
         dotPr = 0.0;
     }
 
     vec4 spec = vec4(1.0) * pow(dotPr, s);
-    vec4 texColor = texture2D(Texture, gl_TexCoord[0].st);
 
-    if (texColor.z >= 0.3 && texColor.x <= 0.5 && texColor.y <= 0.5)
+    if (Color == vec4(0.0)) // background
     {
-        texColor += 0.5 * spec;
+        gl_FragColor = ambient;
     }
+    else if (Color == vec4(1.0)) // planet
+    {
+        vec4 color = 0.2 * ambient + diff;
 
-    gl_FragColor =  texColor;
+        if (color.z >= 0.2 && color.x <= 0.4 && color.y <= 0.4)
+        {
+            color += 0.5 * spec;
+        }
+
+        gl_FragColor = color;
+    }
+    else // rings
+    {
+        gl_FragColor = Color;
+    }
 }

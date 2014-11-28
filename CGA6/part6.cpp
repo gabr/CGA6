@@ -35,6 +35,8 @@ float t = 0;  // the time parameter (incremented in the idle-function)
 float speed = 0.1;  // rotation speed of the light source in degree/frame
 
 // textures
+glm::vec4 planetColor(1.0);
+glm::vec4 backgroundColor(0.0);
 GLuint earthTex, moonTex, saturnTex, backgroundTex; // use for the according textures
 
 // file paths
@@ -56,18 +58,18 @@ glm::vec4 lightSource(0.0, 0.0, 0.0, 1.0);
 // earth
 const double earthRadius = 12;
 const float earthDegree = 2.0;
-glm::vec4 earthColor(0.0, 0.0, 1.0, 0.0);
+glm::vec4 earthColor = planetColor;
 // moon
 const double moonRadius = 6;
 const double moonSlices = 15;
 const double moonStacks = 15;
 const float moonDegree = 4.0;
-glm::vec4 moonColor(0.5, 0.5, 0.5, 0.0);
+glm::vec4 moonColor = planetColor;
 
 // saturn
 const double saturnRadius = 16;
 const float saturnDegree = 1.0;
-glm::vec4 saturnColor(1.0, 0.85, 0.6, 0.0);
+glm::vec4 saturnColor = planetColor;
 // rings
 const double distanceFromSaturn = 7.0;
 const double distanceBetweenRings = 0.4;
@@ -371,10 +373,8 @@ void display()
     //TODO: Set Texture for each body
 
     //TODO: Draw geometry for background
-    glm::vec3 spaceCenter = glm::vec3(cam.position + glm::normalize(cam.viewDir) * spaceLength);
-    M = glm::translate(spaceCenter);
     M = glm::mat4(1.0f);
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), backgroundTex, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, backgroundColor, backgroundTex, t);
     drawQuad(spaceLength);
 
     //draw a blue earth
@@ -400,7 +400,6 @@ void display()
          i += distanceBetweenRings)
          drawCircle(i, numberOfCircleSegments);
 
-    glUseProgram(0); // <-- CO TO JEST
     glutSwapBuffers();
 }
 
