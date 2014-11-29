@@ -37,11 +37,13 @@ float speed = 0.1;  // rotation speed of the light source in degree/frame
 // textures
 glm::vec4 planetColor(1.0);
 glm::vec4 backgroundColor(0.0);
-GLuint earthTex, moonTex, saturnTex, backgroundTex; // use for the according textures
+GLubyte blackMask[] = { 0 };
+GLuint earthTex, earthMaskTex, moonTex, saturnTex, backgroundTex, blackMaskTex; // use for the according textures
 
 // file paths
 const string background_filePath = "./data/background.jpg";
 const string earth_filePath = "./data/earth.jpg";
+const string earthMask_filePath = "./data/earth_reflect.jpg";
 const string moon_filePath = "./data/moon.jpg";
 const string saturn_filePath = "./data/saturn.jpg";
 
@@ -101,8 +103,9 @@ struct ShaderUniforms
     GLint location_LightSourceViewSpace;
     GLint location_Color;
     GLint location_Texture;
+    GLint location_Mask;
 
-    void bindUniforms(glm::mat4& M, glm::mat4& V, glm::mat4& P, glm::vec4& LightSource, glm::vec4& Color, GLuint TexdID, float  t)
+    void bindUniforms(glm::mat4& M, glm::mat4& V, glm::mat4& P, glm::vec4& LightSource, glm::vec4& Color, GLuint TexdID, GLuint TexMaskID, float  t)
     {
         location_Time = glGetUniformLocation(Shader, "Time");
         location_MVP = glGetUniformLocation(Shader, "MVP");
@@ -111,7 +114,8 @@ struct ShaderUniforms
         location_LightSourceViewSpace = glGetUniformLocation(Shader, "LightSource");
         location_Color = glGetUniformLocation(Shader, "Color");
 
-        location_Texture = glGetUniformLocation(Shader, "DiffuseTexture");
+        location_Texture = glGetUniformLocation(Shader, "Texture");
+        location_Mask = glGetUniformLocation(Shader, "Mask");
 
         // TODO create the matrices MV,MVP and NormalMatrix
         glm::mat4 MV = V * M;
@@ -125,7 +129,14 @@ struct ShaderUniforms
         glUniform4fv(location_Color, 1, glm::value_ptr(Color));
         glUniform1f(location_Time, 10 * t);
 
+        glUniform1i(location_Texture, 0);
+        glUniform1i(location_Mask, 1);
+
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, TexdID);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, TexMaskID);
     }
 
 };
@@ -179,6 +190,12 @@ void initGL()
     QImage earth = QGLWidget::convertToGLFormat(img);
     initTexture(earthTex, earth.width(), earth.height(), earth.bits());
 
+    glGenTextures(1, &earthMaskTex);
+    QImage imgMask(earthMask_filePath.c_str());
+    imgMask = imgMask.transformed(transform);
+    QImage earthMask = QGLWidget::convertToGLFormat(imgMask);
+    initTexture(earthMaskTex, earthMask.width(), earthMask.height(), earthMask.bits());
+
     glGenTextures(1, &moonTex);
     QImage moon = QGLWidget::convertToGLFormat(QImage(moon_filePath.c_str()));
     initTexture(moonTex, moon.width(), moon.height(), moon.bits());
@@ -186,6 +203,9 @@ void initGL()
     glGenTextures(1, &saturnTex);
     QImage saturn = QGLWidget::convertToGLFormat(QImage(saturn_filePath.c_str()));
     initTexture(saturnTex, saturn.width(), saturn.height(), saturn.bits());
+
+    glGenTextures(1, &blackMaskTex);
+    initTexture(blackMaskTex, 1, 1, blackMask);
     /// &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 }
 
@@ -362,7 +382,7 @@ void display()
     //draw a yellow sun
     glUseProgram(SunShader.Shader);
     M = glm::mat4(1.0f) * glm::rotate(90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-    SunShader.bindUniforms(M, V, P, lightSource, sunColor, 0, t);
+    SunShader.bindUniforms(M, V, P, lightSource, sunColor, 0, 0, t);
     glutSolidSphere(sunRadius, sunSlices, sunStacks);
 
     //Texturing from now on
@@ -374,27 +394,27 @@ void display()
 
     //TODO: Draw geometry for background
     M = glm::mat4(1.0f);
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, backgroundColor, backgroundTex, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, backgroundColor, backgroundTex, blackMaskTex, t);
     drawQuad(spaceLength);
 
     //draw a blue earth
     M = glm::rotate(earthDegree * t, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(50.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, earthColor, earthTex, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, earthColor, earthTex, earthMaskTex, t);
     drawSphere(earthRadius, planetSlices, planetStacks);
 
     // draw the grey earth's moon
     // remember that the transformation of the earth also affects the moon
     M = M * glm::rotate(moonDegree * t, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::translate(glm::vec3(20.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, moonColor, moonTex, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, moonColor, moonTex, blackMaskTex, t);
     drawSphere(moonRadius, moonSlices, moonStacks);
 
     //draw saturn with its rings
     M = glm::rotate(saturnDegree * t, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::translate(glm::vec3(100.0f, 0.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, saturnColor, saturnTex, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, saturnColor, saturnTex, blackMaskTex, t);
     drawSphere(saturnRadius, planetSlices, planetStacks);
     // rings
     M = M * glm::rotate(120.0f, glm::vec3(0.0f, 0.0f, 1.0f)) * glm::rotate(90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-    TexturePhongShader.bindUniforms(M, V, P, lightSource, ringsColor, 0, t);
+    TexturePhongShader.bindUniforms(M, V, P, lightSource, ringsColor, 0, blackMaskTex, t);
     for (double i = saturnRadius + distanceFromSaturn;
          i < (saturnRadius + distanceFromSaturn) + (numberOfRings * distanceBetweenRings);
          i += distanceBetweenRings)

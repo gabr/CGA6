@@ -11,6 +11,7 @@ uniform vec4 LightSource;  // updated each draw call
 uniform vec4 Color;  // updated each draw call
 
 uniform sampler2D Texture;
+uniform sampler2D Mask;
  
 void main() {
 
@@ -24,7 +25,8 @@ void main() {
     vec3 R = reflect(L, N);
 
     // ambient from texture
-    vec4 ambient = texture2D(Texture, gl_TexCoord[0].st);
+    vec4 ambient = texture2D(Texture, TexCoord);
+    vec4 mask = texture2D(Mask, TexCoord);
 
     // diff
     float dotPr = dot(N, L);
@@ -35,7 +37,7 @@ void main() {
     vec4 diff = ambient * dotPr;
 
     // spec
-    float s = 3;
+    float s = 10;
     dotPr = dot(E, R);
     if (dotPr < 0.0)
     {
@@ -52,7 +54,7 @@ void main() {
     {
         vec4 color = 0.2 * ambient + diff;
 
-        if (color.z >= 0.2 && color.x <= 0.4 && color.y <= 0.4)
+        if (mask.x > 0.0)
         {
             color += 0.5 * spec;
         }
